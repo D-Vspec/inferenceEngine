@@ -2,7 +2,8 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 
 SRC = main.cpp src/loader.cpp
-OBJ = $(SRC:.cpp=.o)
+BUILD_DIR = build
+OBJ = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SRC))
 TARGET = inference
 
 all: $(TARGET)
@@ -10,10 +11,11 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-%.o: %.cpp
+$(BUILD_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -rf $(BUILD_DIR) $(TARGET)
 
 .PHONY: all clean
