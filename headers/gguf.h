@@ -4,13 +4,11 @@
 #include <cstdint>
 #include <cstddef>
 
-typedef struct {
-    uint32_t magic;
-    uint32_t version;
-    uint64_t tensor_count;
-    uint64_t metadata_kv_count;
-} GGufHeader;
+struct MappedFile {
+    void* data;
+    size_t size;
+};
 
-void* loadFile(const char* filename, size_t& file_size);
+MappedFile loadFile(const char* filename);
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "gguf.h"
 #include <cstdint>
 #include <cstddef>
 #include <string_view>
@@ -94,7 +95,7 @@ using gguf_metadata_value_t = std::variant<
     std::span<int64_t>,
     std::span<double>,
 
-    std::span<std::string_view>,
+    std::span<std::string_view>
 >;
 
 
@@ -104,5 +105,7 @@ typedef struct {
 } metadata;
 
 std::unordered_map<std::string_view, metadata> parseMetadata(const char* data, size_t metadata_kv_count);
+
+MappedFile parseGGUF(const char* filename);
 
 #endif

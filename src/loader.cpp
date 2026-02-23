@@ -5,20 +5,20 @@
 #include <unistd.h>
 #include <iostream>
 
-void* loadFile(const char* filename, size_t& file_size) {
+MappedFile loadFile(const char* filename) {
     int fd = open(filename, O_RDONLY);
     if (fd < 0) {
         std::cerr << "Failed to open file: " << filename << std::endl;
-        return nullptr;
+        return {nullptr, 0};
     }
 
     struct stat st;
     if (fstat(fd, &st) < 0) {
         std::cerr << "Failed to stat file: " << filename << std::endl;
         close(fd);
-        return nullptr;
+        return {nullptr, 0};
     }
-    file_size = st.st_size;
+    size_t file_size = st.st_size;
 
     std::cout << "File size: " << file_size << " bytes" << std::endl;
 
@@ -27,8 +27,8 @@ void* loadFile(const char* filename, size_t& file_size) {
 
     if (mapped == MAP_FAILED) {
         std::cerr << "Failed to mmap file" << std::endl;
-        return nullptr;
+        return {nullptr, 0};
     }
 
-    return mapped;
+    return {mapped, file_size};
 }

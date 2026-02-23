@@ -1,19 +1,13 @@
 #include "headers/gguf.h"
+#include "headers/parser.h"
 #include <sys/mman.h>
 #include <iostream>
 
 int main() {
-    size_t file_size = 0;
-    void* data = loadFile("models/Llama-3.2-1B-Instruct-Q8_0.gguf", file_size);
+    const char* filename = "models/Llama-3.2-1B-Instruct-Q8_0.gguf";
+    MappedFile ggufFile = parseGGUF(filename);
+    std::cout << "GGUF file loaded successfully: " << filename << std::endl;
+    std::cout << "File size: " << ggufFile.size << " bytes" << std::endl;
 
-    GGufHeader* header = static_cast<GGufHeader*>(data);
-
-    if (data) {
-        std::cout << header->magic << std::endl;
-        std::cout << header->version << std::endl;
-        std::cout << header->tensor_count << std::endl;
-        std::cout << header->metadata_kv_count << std::endl;
-        munmap(data, file_size);
-    }
     return 0;
 }
