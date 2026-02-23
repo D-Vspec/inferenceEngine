@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2
+CXXFLAGS = -std=c++20 -Wall -Wextra -O2
 
 SRC = main.cpp src/loader.cpp
 BUILD_DIR = build

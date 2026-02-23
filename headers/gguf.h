@@ -11,6 +11,6 @@ typedef struct {
     uint64_t metadata_kv_count;
 } GGufHeader;
 
-void* loadFile(const char* filename, size_t n_bytes);
+void* loadFile(const char* filename, size_t& file_size);
 
 #endif
