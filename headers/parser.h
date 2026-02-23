@@ -104,6 +104,11 @@ typedef struct {
     gguf_metadata_value_t value;
 } metadata;
 
+typedef struct {
+    GGufHeader header;
+    std::unordered_map<std::string_view, metadata> metadata_map;
+} GGufStarter;
+
 std::unordered_map<std::string_view, metadata> parseMetadata(const char* data, size_t metadata_kv_count);
 
 MappedFile parseGGUF(const char* filename);

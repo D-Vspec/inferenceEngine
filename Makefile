@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++23 -Wall -Wextra -O2
 
-SRC = main.cpp src/loader.cpp src/parser.cpp
+SRC = main.cpp src/loader.cpp src/parser.cpp src/engine.cpp
 BUILD_DIR = build
 OBJ = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SRC))
 TARGET = inference
