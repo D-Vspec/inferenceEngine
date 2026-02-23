@@ -109,8 +109,8 @@ typedef struct {
     std::unordered_map<std::string_view, metadata> metadata_map;
 } GGufStarter;
 
-std::unordered_map<std::string_view, metadata> parseMetadata(const char* data, size_t metadata_kv_count);
-
-MappedFile parseGGUF(const char* filename);
+MappedFile getHeaders(const char* filename);
+std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor, size_t metadata_kv_count);
+GGufStarter parseGGUF(const char* filename);
 
 #endif
