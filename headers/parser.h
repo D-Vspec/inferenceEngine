@@ -8,6 +8,7 @@
 #include <span>
 #include <variant>
 #include <unordered_map>
+#include <vector>
 
 typedef struct {
     uint32_t magic;
@@ -105,12 +106,21 @@ typedef struct {
 } metadata;
 
 typedef struct {
+    std::string_view name;
+    std::span<const uint64_t> dims;
+    uint32_t type;
+    uint64_t offset;
+} TensorInfo;
+
+typedef struct {
     GGufHeader header;
     std::unordered_map<std::string_view, metadata> metadata_map;
+    std::vector<TensorInfo> tensor_metadata;
 } GGufStarter;
 
 MappedFile getHeaders(const char* filename);
-std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor, size_t metadata_kv_count);
+std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMetadata(const char* cursor, size_t metadata_kv_count);
 GGufStarter parseGGUF(const char* filename);
+std::pair<std::vector<TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount);
 
 #endif

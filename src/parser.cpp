@@ -1,6 +1,7 @@
 #include "../headers/parser.h"
 #include "../headers/gguf.h"
 #include <iostream>
+#include <vector>
 
 MappedFile getHeaders(const char* filename) {
     MappedFile ggufFile = loadFile(filename);
@@ -11,7 +12,7 @@ MappedFile getHeaders(const char* filename) {
     return std::move(ggufFile);
 }
 
-std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor, size_t metadata_kv_count){
+std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMetadata(const char* cursor, size_t metadata_kv_count){
     std::unordered_map<std::string_view, metadata> metadata_map;
 
     for(size_t i = 0; i < metadata_kv_count; i++) {
@@ -21,13 +22,9 @@ std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor,
         std::string_view key(cursor, keyLength);
         cursor += keyLength;
 
-        std::cout << "Parsing metadata key: " << key << std::endl;
-
         gguf_metadata_value_type valueType = *(gguf_metadata_value_type*)cursor;
         cursor += sizeof(gguf_metadata_value_type);
 
-        std::cout << "Value type: " << valueType << std::endl;
-        
         metadata value;
         value.value_type = valueType;
 
@@ -82,18 +79,13 @@ std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor,
                 value.value = std::string_view(cursor, strLength);
                 cursor += strLength;
 
-                std::cout << "Parsed string value: " << std::get<std::string_view>(value.value) << std::endl;
-
                 break;
             } 
             case GGUF_METADATA_VALUE_TYPE_ARRAY: {
-                std::cout << "Parsing array value..." << std::endl;
                 gguf_metadata_value_type arrayValueType = *(gguf_metadata_value_type*)cursor;
                 cursor += sizeof(gguf_metadata_value_type);
-                std::cout << "Array value type: " << arrayValueType << std::endl;
                 uint64_t arrayLength = *(uint64_t*)cursor;
                 cursor += sizeof(uint64_t); 
-                std::cout << "Array length: " << arrayLength << std::endl;
                 switch (arrayValueType) {
                     case GGUF_METADATA_VALUE_TYPE_UINT8: {
                         value.value = std::span<uint8_t>((uint8_t*)cursor, arrayLength);
@@ -158,7 +150,6 @@ std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor,
                             stringArray[j] = std::string_view(cursor, strLength);
                             cursor += strLength;
 
-                            std::cout << "Parsed string array element: " << stringArray[j] << std::endl;
                         }
                         value.value = std::span<std::string_view>(stringArray, arrayLength);
                         break;
@@ -174,13 +165,36 @@ std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor,
                 return {};
         } //switch ends here
 
-        std::cout << "Parsed metadata key: " << key << " with value type: " << valueType << std::endl;
-        std::cout << "Value : " << value.value.index() << std::endl;
-
         metadata_map[key] = value;
     }
 
-    return metadata_map;
+    return { std::move(metadata_map), cursor };
+}
+
+std::pair<std::vector<TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount){
+    std::vector<TensorInfo> tensorMetadata(tensorCount);
+
+    for(int i=0;i<tensorCount;i++) {
+        uint64_t nameLength = *(uint64_t*)cursor;
+        cursor += sizeof(uint64_t);
+
+        tensorMetadata[i].name = std::string_view(cursor, nameLength);
+        cursor += nameLength;
+
+        uint64_t dimCount = *(uint32_t*)cursor;
+        cursor += sizeof(uint32_t);
+
+        tensorMetadata[i].dims = std::span<const uint64_t>((const uint64_t*) cursor, dimCount);
+        cursor += dimCount * sizeof(uint64_t);
+
+        tensorMetadata[i].type = *(uint32_t*)cursor;
+        cursor += sizeof(uint32_t);
+
+        tensorMetadata[i].offset = *(uint64_t*)cursor;
+        cursor += sizeof(uint64_t);
+    }
+
+    return { tensorMetadata, cursor };
 }
 
 GGufStarter parseGGUF(const char* filename) {
@@ -197,9 +211,23 @@ GGufStarter parseGGUF(const char* filename) {
     GGufHeader* header = (GGufHeader*)ggufFile.data;    
 
     cursor += sizeof(GGufHeader);
+    
+    std::cout << "Cursor at " << (void *)cursor << " after reading header" << std::endl;
 
-    std::unordered_map<std::string_view, metadata> metadata_map = parseMetadata(cursor, header->metadata_kv_count);
+    auto [metadata_map, cursor_after_metadata] = parseMetadata(cursor, header->metadata_kv_count);
 
-    return { *header, std::move(metadata_map) };
+    cursor = cursor_after_metadata;
+
+    std::cout << "Cursor at " << (void *)cursor << " after reading kv metadata" << std::endl;
+
+    auto [tensorMetadata, cursor_after_tensors] = getTensorMetadata(cursor, header->tensor_count);
+
+    cursor = cursor_after_tensors;
+
+    std::cout << "Cursor at " << (void *)cursor << " after reading tensor metadata" << std::endl;
+
+    return { *header, std::move(metadata_map), std::move(tensorMetadata) };
 }
+
+
 
