@@ -1,7 +1,7 @@
 #include "../headers/parser.h"
 #include "../headers/gguf.h"
-
 #include <iostream>
+
 MappedFile getHeaders(const char* filename) {
     MappedFile ggufFile = loadFile(filename);
     if (ggufFile.data == nullptr) {
@@ -180,7 +180,7 @@ std::unordered_map<std::string_view, metadata> parseMetadata(const char* cursor,
         metadata_map[key] = value;
     }
 
-    return std::move(metadata_map);
+    return metadata_map;
 }
 
 GGufStarter parseGGUF(const char* filename) {
