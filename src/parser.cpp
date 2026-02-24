@@ -9,7 +9,7 @@ MappedFile getHeaders(const char* filename) {
         std::cerr << "Failed to load GGUF file: " << filename << std::endl;
         return {};
     }
-    return std::move(ggufFile);
+    return ggufFile;
 }
 
 std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMetadata(const char* cursor, size_t metadata_kv_count){
@@ -86,6 +86,9 @@ std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMeta
                 cursor += sizeof(gguf_metadata_value_type);
                 uint64_t arrayLength = *(uint64_t*)cursor;
                 cursor += sizeof(uint64_t); 
+
+                std::cout << "Size of array: " << arrayLength << std::endl;
+
                 switch (arrayValueType) {
                     case GGUF_METADATA_VALUE_TYPE_UINT8: {
                         value.value = std::span<uint8_t>((uint8_t*)cursor, arrayLength);
@@ -171,35 +174,38 @@ std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMeta
     return { std::move(metadata_map), cursor };
 }
 
-std::pair<std::vector<TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount){
-    std::vector<TensorInfo> tensorMetadata(tensorCount);
+std::pair<std::unordered_map<std::string_view, TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount){
+    std::unordered_map<std::string_view, TensorInfo> tensorMetadata;
 
-    for(int i=0;i<tensorCount;i++) {
+    for(size_t i=0;i<tensorCount;i++) {
         uint64_t nameLength = *(uint64_t*)cursor;
         cursor += sizeof(uint64_t);
 
-        tensorMetadata[i].name = std::string_view(cursor, nameLength);
+        std::string_view name = std::string_view(cursor, nameLength);
         cursor += nameLength;
 
-        uint64_t dimCount = *(uint32_t*)cursor;
+        tensorMetadata[name] = {};
+
+        uint32_t dimCount = *(uint32_t*)cursor;
         cursor += sizeof(uint32_t);
 
-        tensorMetadata[i].dims = std::span<const uint64_t>((const uint64_t*) cursor, dimCount);
+        tensorMetadata[name].dims = std::span<const uint64_t>((const uint64_t*) cursor, dimCount);
         cursor += dimCount * sizeof(uint64_t);
 
-        tensorMetadata[i].type = *(uint32_t*)cursor;
+        tensorMetadata[name].type = *(uint32_t*)cursor;
         cursor += sizeof(uint32_t);
 
-        tensorMetadata[i].offset = *(uint64_t*)cursor;
+        tensorMetadata[name].offset = *(uint64_t*)cursor;
         cursor += sizeof(uint64_t);
     }
 
-    return { tensorMetadata, cursor };
+    return { std::move(tensorMetadata), cursor };
 }
 
 GGufStarter parseGGUF(const char* filename) {
 
     MappedFile ggufFile = getHeaders(filename);
+
    
     const char* cursor = (const char*)ggufFile.data;
 
