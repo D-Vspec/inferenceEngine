@@ -42,8 +42,6 @@ std::vector<uint64_t> tokenize(const std::string& input, const std::unordered_ma
     std::vector<uint64_t> tokenIds;
 
     for (const auto& token : preTokens) {
-        std::cout << "Pre-token: " << token << std::endl;
-
         std::string tempToken;
         for (char c : token) {
             if (c == ' ')
@@ -57,7 +55,7 @@ std::vector<uint64_t> tokenize(const std::string& input, const std::unordered_ma
             for (size_t len = tempToken.size(); len >= 1; --len) {
                 std::string prefix = tempToken.substr(0, len);
                 if (vocab.find(prefix) != vocab.end()) {
-                    // std::cout << "  Matched: \"" << prefix << "\" -> " << vocab.at(prefix) << std::endl;
+                    std::cout << "  Matched: \"" << prefix << "\" -> " << vocab.at(prefix) << std::endl;
                     tokenIds.push_back(vocab.at(prefix));
                     tempToken = tempToken.substr(len);
                     found = true;

@@ -87,8 +87,6 @@ std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMeta
                 uint64_t arrayLength = *(uint64_t*)cursor;
                 cursor += sizeof(uint64_t); 
 
-                std::cout << "Size of array: " << arrayLength << std::endl;
-
                 switch (arrayValueType) {
                     case GGUF_METADATA_VALUE_TYPE_UINT8: {
                         value.value = std::span<uint8_t>((uint8_t*)cursor, arrayLength);
