@@ -2,6 +2,8 @@
 #define TENSOR_H
 
 #include <vector>
+#include <variant>
+#include <span>
 #include <cstdint>
 #include <array>
 

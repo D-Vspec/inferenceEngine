@@ -18,6 +18,7 @@ Tensor loadTensor(const char* tensorLocation, bool mut, uint32_t size, uint32_t 
                 }
                 tensor.data = std::move(data);
             }
+            break;
         }
         case GGML_TYPE_F16: {
             if(tensor.mut == true){
