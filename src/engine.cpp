@@ -16,8 +16,6 @@ int RunEngine() {
 
     std::cout << "Tensor count: " << ggufMetadata.tensor_metadata.size() << std::endl;
     
-    std::cout << std::get<std::span<std::string_view>>(ggufMetadata.metadata_map["tokenizer.ggml.tokens"].value).size() << std::endl;
-    
     //  for (const auto& [name, tensorInfo] : ggufMetadata.tensor_metadata) {
     //     std::cout << "Tensor Name: " << name << ", Type: " << tensorInfo.type << ", Offset: " << tensorInfo.offset << std::endl;
         // std::cout << "Dimensions: ";
@@ -30,6 +28,10 @@ int RunEngine() {
     std::unordered_map<std::string_view, uint32_t>tokenLookup = buildVocab(std::get<std::span<std::string_view>>(ggufMetadata.metadata_map["tokenizer.ggml.tokens"].value));
 
     std::vector<uint64_t> tokens = tokenize("My name is Indigo Montoya, you killed my father, prepare to die.", tokenLookup);
+
+    uint32_t embeddingLength = std::get<std::uint32_t>(ggufMetadata.metadata_map["qwen2.embedding_length"].value);
+    
+    std::cout << "Type of tensor : " << ggufMetadata.tensor_metadata["token_embd.weight"].type << std::endl;
 
     return 0;
 }

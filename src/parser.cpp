@@ -2,6 +2,7 @@
 #include "../headers/gguf.h"
 #include <iostream>
 #include <vector>
+#include <tuple>
 
 MappedFile getHeaders(const char* filename) {
     MappedFile ggufFile = loadFile(filename);
@@ -12,7 +13,7 @@ MappedFile getHeaders(const char* filename) {
     return ggufFile;
 }
 
-std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMetadata(const char* cursor, size_t metadata_kv_count){
+std::tuple<std::unordered_map<std::string_view, metadata>, const char*, size_t> parseMetadata(const char* cursor, size_t metadata_kv_count){
     std::unordered_map<std::string_view, metadata> metadata_map;
 
     for(size_t i = 0; i < metadata_kv_count; i++) {
@@ -169,10 +170,19 @@ std::pair<std::unordered_map<std::string_view, metadata>, const char*> parseMeta
         metadata_map[key] = value;
     }
 
-    return { std::move(metadata_map), cursor };
+    size_t alignment = 0;
+    //Alignment
+    if (metadata_map.count("general.alignment") != 0)
+        alignment = std::get<uint32_t>(metadata_map["general.alignment"].value);
+    else
+        alignment = 32;
+    
+    std::cout << "Alignment: " << alignment << std::endl;
+
+    return { std::move(metadata_map), cursor, alignment };
 }
 
-std::pair<std::unordered_map<std::string_view, TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount){
+std::pair<std::unordered_map<std::string_view, TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount, size_t alignment){
     std::unordered_map<std::string_view, TensorInfo> tensorMetadata;
 
     for(size_t i=0;i<tensorCount;i++) {
@@ -193,17 +203,22 @@ std::pair<std::unordered_map<std::string_view, TensorInfo>, const char*> getTens
         tensorMetadata[name].type = *(uint32_t*)cursor;
         cursor += sizeof(uint32_t);
 
-        tensorMetadata[name].offset = *(uint64_t*)cursor;
+        tensorMetadata[name].offset = *(uint64_t*)cursor + alignment; 
         cursor += sizeof(uint64_t);
-    }
 
+    }
     return { std::move(tensorMetadata), cursor };
+}
+
+const char* getAlignment(const char* cursor, size_t alignment) {
+    uintptr_t ptr = reinterpret_cast<uintptr_t>(cursor);
+    size_t offset = (alignment - (ptr % alignment)) % alignment;
+    return cursor + offset;
 }
 
 GGufStarter parseGGUF(const char* filename) {
 
     MappedFile ggufFile = getHeaders(filename);
-
    
     const char* cursor = (const char*)ggufFile.data;
 
@@ -218,20 +233,25 @@ GGufStarter parseGGUF(const char* filename) {
     
     std::cout << "Cursor at " << (void *)cursor << " after reading header" << std::endl;
 
-    auto [metadata_map, cursor_after_metadata] = parseMetadata(cursor, header->metadata_kv_count);
+    auto [metadata_map, cursor_after_metadata, alignment] = parseMetadata(cursor, header->metadata_kv_count);
 
     cursor = cursor_after_metadata;
 
     std::cout << "Cursor at " << (void *)cursor << " after reading kv metadata" << std::endl;
 
-    auto [tensorMetadata, cursor_after_tensors] = getTensorMetadata(cursor, header->tensor_count);
+    auto [tensorMetadata, cursor_after_tensors] = getTensorMetadata(cursor, header->tensor_count, alignment);
 
     cursor = cursor_after_tensors;
 
     std::cout << "Cursor at " << (void *)cursor << " after reading tensor metadata" << std::endl;
 
+    cursor = getAlignment(cursor, alignment);
+
+    std::cout << "Cursor at " << (void *)cursor << " after alignment" << std::endl;
+
     return { *header, std::move(metadata_map), std::move(tensorMetadata) };
 }
+
 
 
 

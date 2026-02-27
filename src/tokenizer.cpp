@@ -1,4 +1,6 @@
 #include "../headers/tokenizer.h"
+#include "../headers/tensor.h"
+
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -70,6 +72,39 @@ std::vector<uint64_t> tokenize(const std::string& input, const std::unordered_ma
     }
 
     return tokenIds;
+}
+
+Tensor tokenToTensor(const uint64_t token, const char* embedWeights, uint32_t type, uint32_t embedSize){
+    Tensor tensor;
+    tensor.mut = true;
+
+    size_t unitSize;
+
+    switch (type) {
+        case GGML_TYPE_F32:
+            unitSize = sizeof(float);
+            break;
+        case GGML_TYPE_F16:
+            unitSize = sizeof(uint16_t);
+            break;
+        default:
+            std::cerr << "Unsupported type: " << type << std::endl;
+            return {};
+    }
+
+    const char* tensorLocation = embedWeights + (token * unitSize);
+
+    tensor = loadTensor(tensorLocation, true, embedSize, type);
+
+    return tensor;
+}
+
+std::vector<Tensor> tokensToTensors(const std::vector<uint64_t>& tokens, const char* embedWeights, uint32_t type, uint32_t embedSize){
+    std::vector<Tensor> tensors;
+    for(const auto& token : tokens){
+        tensors.push_back(tokenToTensor(token, embedWeights, type, embedSize));
+    }
+    return tensors;
 }
 
 

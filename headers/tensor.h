@@ -38,4 +38,6 @@ typedef struct {
     TData data; 
 } Tensor;
 
+Tensor loadTensor(const char* tensorLocation, bool mut, uint32_t size, uint32_t type);
+
 #endif
