@@ -203,7 +203,7 @@ std::pair<std::unordered_map<std::string_view, TensorInfo>, const char*> getTens
         tensorMetadata[name].type = *(uint32_t*)cursor;
         cursor += sizeof(uint32_t);
 
-        tensorMetadata[name].offset = *(uint64_t*)cursor + alignment; 
+        tensorMetadata[name].offset = *(uint64_t*)cursor; 
         cursor += sizeof(uint64_t);
 
     }
@@ -249,7 +249,7 @@ GGufStarter parseGGUF(const char* filename) {
 
     std::cout << "Cursor at " << (void *)cursor << " after alignment" << std::endl;
 
-    return { *header, std::move(metadata_map), std::move(tensorMetadata) };
+    return { *header, std::move(metadata_map), std::move(tensorMetadata), cursor };
 }
 
 

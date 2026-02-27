@@ -116,6 +116,7 @@ typedef struct {
     GGufHeader header;
     std::unordered_map<std::string_view, metadata> metadata_map;
     std::unordered_map<std::string_view, TensorInfo> tensor_metadata;
+    const char* tensorData;
 } GGufStarter;
 
 MappedFile getHeaders(const char* filename);
