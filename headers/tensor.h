@@ -21,7 +21,6 @@ using TData = std::variant<
     std::vector<int64_t>,
     std::vector<double>,
 
-
     // For weights and stuff
     std::span<const float>,
     std::span<const uint16_t>,
@@ -41,5 +40,12 @@ typedef struct {
 } Tensor;
 
 Tensor loadTensor(const char* tensorLocation, bool mut, uint32_t size, uint32_t type);
+
+void addTensors(const Tensor& a, const Tensor& b, Tensor& out); //A + B
+void mulTensors(const Tensor& a, const Tensor& b, Tensor& out); //A * B
+void subTensors(const Tensor& a, const Tensor& b, Tensor& out); //A - B 
+void printTensor(const Tensor& tensor);
+Tensor transpose(const Tensor& a);
+double sum(const Tensor& a);
 
 #endif

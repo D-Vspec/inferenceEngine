@@ -31,19 +31,8 @@ int RunEngine() {
 
     uint32_t embeddingLength = std::get<std::uint32_t>(ggufMetadata.metadata_map["qwen2.embedding_length"].value);
     
-    std::cout << "Type of tensor : " << ggufMetadata.tensor_metadata["token_embd.weight"].type << std::endl;
-
     const char* embedWeights = ggufMetadata.tensorData + ggufMetadata.tensor_metadata["token_embd.weight"].offset;
     std::vector<Tensor> tokenTensors = tokensToTensors(tokens, embedWeights, ggufMetadata.tensor_metadata["token_embd.weight"].type, embeddingLength);
-
-    for(size_t i = 0; i < tokenTensors.size(); i++){
-        std::cout << "Token: " << tokens[i] << ", First 5 values of embedding: ";
-        auto& data = std::get<std::vector<float>>(tokenTensors[i].data);
-        for(size_t j = 0; j < 5 && j < data.size(); j++){
-            std::cout << data[j] << " ";
-        }
-        std::cout << std::endl;
-    }
 
     return 0;
 }
