@@ -68,42 +68,18 @@ enum gguf_metadata_value_type: uint32_t { // Also copied from ggml.h because i c
     GGUF_METADATA_VALUE_TYPE_UINT64 = 10,
     GGUF_METADATA_VALUE_TYPE_INT64 = 11,
     GGUF_METADATA_VALUE_TYPE_FLOAT64 = 12,
+    NUMBER_OF_TYPES = 13
 };
 
-using gguf_metadata_value_t = std::variant<
-
-    uint8_t,
-    int8_t,
-    uint16_t,
-    int16_t,
-    uint32_t,
-    int32_t,
-    float,
-    bool,
-    std::string_view,
-    uint64_t,
-    int64_t,
-    double,
-
-    std::span<uint8_t>,
-    std::span<int8_t>,
-    std::span<uint16_t>,
-    std::span<int16_t>,
-    std::span<uint32_t>,
-    std::span<int32_t>,
-    std::span<float>,
-    std::span<bool>,
-    std::span<uint64_t>,
-    std::span<int64_t>,
-    std::span<double>,
-
-    std::span<std::string_view>
->;
-
+struct gguf_metadata_value {
+    size_t size;
+    void* data;
+    bool owned;
+};
 
 typedef struct {
     gguf_metadata_value_type value_type;
-    gguf_metadata_value_t value;
+    gguf_metadata_value value;
 } metadata;
 
 typedef struct {
@@ -123,5 +99,7 @@ MappedFile getHeaders(const char* filename);
 std::tuple<std::unordered_map<std::string_view, metadata>, const char*, size_t> parseMetadata(const char* cursor, size_t metadata_kv_count);
 GGufStarter parseGGUF(const char* filename);
 std::pair<std::unordered_map<std::string_view, TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount);
+
+metadata readMetadata(size_t size, const char* cursor, gguf_metadata_value_type valueType);
 
 #endif
