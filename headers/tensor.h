@@ -9,28 +9,47 @@
 
 #include "parser.h"
 
-using TData = std::variant<
+// using TData = std::variant<
 
-    // Activation, KV Cache and all
-    std::vector<float>,
-    std::vector<uint16_t>,
-    std::vector<uint8_t>,
-    std::vector<int8_t>,
-    std::vector<int16_t>,
-    std::vector<int32_t>,
-    std::vector<int64_t>,
-    std::vector<double>,
+//     // Activation, KV Cache and all
+//     std::vector<float>,
+//     std::vector<uint16_t>,
+//     std::vector<uint8_t>,
+//     std::vector<int8_t>,
+//     std::vector<int16_t>,
+//     std::vector<int32_t>,
+//     std::vector<int64_t>,
+//     std::vector<double>,
 
-    // For weights and stuff
-    std::span<const float>,
-    std::span<const uint16_t>,
-    std::span<const uint8_t>,
-    std::span<const int8_t>,
-    std::span<const int16_t>,
-    std::span<const int32_t>,
-    std::span<const int64_t>,
-    std::span<const double>
->;
+//     // For weights and stuff
+//     std::span<const float>,
+//     std::span<const uint16_t>,
+//     std::span<const uint8_t>,
+//     std::span<const int8_t>,
+//     std::span<const int16_t>,
+//     std::span<const int32_t>,
+//     std::span<const int64_t>,
+//     std::span<const double>
+// >;
+
+enum class DType : uint8_t {
+    Float32,
+    Float16,  // uint16_t
+    UInt8,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Float64,
+};
+
+typedef struct TData {
+    std::variant<
+        std::vector<std::byte>,
+        std::span<const std::byte>
+    > data;    
+    DType type;
+};
 
 typedef struct {
     std::vector<uint64_t> dims;

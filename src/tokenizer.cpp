@@ -1,9 +1,7 @@
 #include "../headers/tokenizer.h"
 #include "../headers/tensor.h"
-
 #include <iostream>
 #include <vector>
-#include <queue>
 
 std::unordered_map<std::string_view, uint32_t> buildVocab(std::span<std::string_view> tokenList){
 

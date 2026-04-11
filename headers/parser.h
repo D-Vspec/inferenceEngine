@@ -73,6 +73,7 @@ enum gguf_metadata_value_type: uint32_t { // Also copied from ggml.h because i c
 
 struct gguf_metadata_value {
     size_t size;
+    size_t numberOfItems;
     void* data;
     bool owned;
 };

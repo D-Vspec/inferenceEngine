@@ -25,12 +25,14 @@ int RunEngine() {
         // std::cout << std::endl;
     // }
 
-    std::unordered_map<std::string_view, uint32_t>tokenLookup = buildVocab(std::get<std::span<std::string_view>>(ggufMetadata.metadata_map["tokenizer.ggml.tokens"].value));
+    std::unordered_map<std::string_view, uint32_t>tokenLookup = buildVocab((ggufMetadata.metadata_map["tokenizer.ggml.tokens"].value.data));
 
     std::vector<uint64_t> tokens = tokenize("My name is Indigo Montoya, you killed my father, prepare to die.", tokenLookup);
 
-    uint32_t embeddingLength = std::get<std::uint32_t>(ggufMetadata.metadata_map["qwen2.embedding_length"].value);
+    uint32_t embeddingLength = *(uint32_t*)(ggufMetadata.metadata_map["qwen2.embedding_length"].value.data);
     
+    std::cout << "Type of tensor : " << ggufMetadata.tensor_metadata["token_embd.weight"].type << std::endl;
+
     const char* embedWeights = ggufMetadata.tensorData + ggufMetadata.tensor_metadata["token_embd.weight"].offset;
     std::vector<Tensor> tokenTensors = tokensToTensors(tokens, embedWeights, ggufMetadata.tensor_metadata["token_embd.weight"].type, embeddingLength);
 
