@@ -66,7 +66,7 @@ Tensor loadTensor(const char* tensorLocation, bool mut, uint32_t size, uint32_t 
                 float* data = static_cast<float*>(std::malloc(size * sizeof(float)));
                 if (!data) throw std::bad_alloc();
                 std::memcpy(data, cursor, size * sizeof(float));
-                tensor.data = {GGML_TYPE_F32, data, size, true};
+                tensor.data = Buffer(GGML_TYPE_F32, data, size, true);
                 break;
             }
             case GGML_TYPE_F16: {
@@ -75,7 +75,7 @@ Tensor loadTensor(const char* tensorLocation, bool mut, uint32_t size, uint32_t 
                 const uint16_t* f16Ptr = reinterpret_cast<const uint16_t*>(cursor);
                 for (uint32_t i = 0; i < size; ++i)
                     data[i] = fp16Tofp32(f16Ptr[i]);
-                tensor.data = {GGML_TYPE_F32, data, size, true};
+                tensor.data = Buffer(GGML_TYPE_F32, data, size, true);
                 break;
             }
             // quantized types: store raw view for later dequantize
@@ -93,17 +93,17 @@ Tensor loadTensor(const char* tensorLocation, bool mut, uint32_t size, uint32_t 
             case GGML_TYPE_Q8_K:
             default: {
                 // store raw bytes; caller must dequantize before math
-                tensor.data = {static_cast<ggml_type>(type),
-                               const_cast<char*>(cursor), size, false};
+                tensor.data = Buffer(static_cast<ggml_type>(type),
+                               const_cast<char*>(cursor), size, false);
                 break;
             }
         }
     } else {
         // read-only view into mmap'd file — no copy
-        tensor.data = {static_cast<ggml_type>(type),
+        tensor.data = Buffer(static_cast<ggml_type>(type),
                        const_cast<char*>(cursor),
                        size,
-                       false};
+                       false);
     }
 
     return tensor;
@@ -274,7 +274,7 @@ Tensor transpose(const Tensor& a) {
         }
     }
 
-    out.data = {GGML_TYPE_F32, dst, total, true};
+    out.data = Buffer(GGML_TYPE_F32, dst, total, true);
     return out;
 }
 

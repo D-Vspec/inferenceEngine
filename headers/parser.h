@@ -101,8 +101,8 @@ struct GGufMetadataValue {
     uint32_t asUint32() const { return scalar.uint32Val; }
     std::string_view asStringView() const { return stringVal; }
 
-    std::span<const std::string_view> asStringViewSpan() const {
-        return {static_cast<const std::string_view*>(arrayData), arrayLength};
+    std::span<std::string_view> asStringViewSpan() const {
+        return {static_cast<std::string_view*>(const_cast<void*>(arrayData)), arrayLength};
     }
 
     std::span<const uint64_t> asUint64Span() const {

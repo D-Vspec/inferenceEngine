@@ -14,6 +14,9 @@ struct Buffer {
 
     Buffer() = default;
 
+    Buffer(ggml_type d, void* ptr, size_t n, bool owned)
+        : dtype(d), rawData(ptr), numElements(n), isOwned(owned) {}
+
     // No copy — prevent accidental double-free
     Buffer(const Buffer&) = delete;
     Buffer& operator=(const Buffer&) = delete;
