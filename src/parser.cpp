@@ -148,6 +148,7 @@ std::tuple<std::unordered_map<std::string_view, metadata>, const char*, size_t> 
 }
 
 std::pair<std::unordered_map<std::string_view, TensorInfo>, const char*> getTensorMetadata(const char* cursor, size_t tensorCount, size_t alignment){
+    (void)alignment;  // reserved for future use
     std::unordered_map<std::string_view, TensorInfo> tensorMetadata;
 
     for(size_t i=0;i<tensorCount;i++) {
