@@ -26,60 +26,60 @@ std::tuple<std::unordered_map<std::string_view, metadata>, const char*, size_t> 
         gguf_metadata_value_type valueType = *(gguf_metadata_value_type*)cursor;
         cursor += sizeof(gguf_metadata_value_type);
 
-        metadata value;
-        value.value_type = valueType;
+        metadata metaVal;
+        metaVal.value_type = valueType;
+        metaVal.value.valueType = valueType;
 
         switch (valueType) {
             case GGUF_METADATA_VALUE_TYPE_UINT8:
-                value.value = *(uint8_t*)cursor;
+                metaVal.value.scalar.uint8Val = *(uint8_t*)cursor;
                 cursor += sizeof(uint8_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_INT8:
-                value.value = *(int8_t*)cursor;
+                metaVal.value.scalar.int8Val = *(int8_t*)cursor;
                 cursor += sizeof(int8_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_UINT16:
-                value.value = *(uint16_t*)cursor;
+                metaVal.value.scalar.uint16Val = *(uint16_t*)cursor;
                 cursor += sizeof(uint16_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_INT16:
-                value.value = *(int16_t*)cursor;
+                metaVal.value.scalar.int16Val = *(int16_t*)cursor;
                 cursor += sizeof(int16_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_UINT32:
-                value.value = *(uint32_t*)cursor;
+                metaVal.value.scalar.uint32Val = *(uint32_t*)cursor;
                 cursor += sizeof(uint32_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_INT32:
-                value.value = *(int32_t*)cursor;
+                metaVal.value.scalar.int32Val = *(int32_t*)cursor;
                 cursor += sizeof(int32_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_FLOAT32:
-                value.value = *(float*)cursor;
+                metaVal.value.scalar.float32Val = *(float*)cursor;
                 cursor += sizeof(float);
                 break;
             case GGUF_METADATA_VALUE_TYPE_BOOL:
-                value.value = *(bool*)cursor;
+                metaVal.value.scalar.boolVal = *(bool*)cursor;
                 cursor += sizeof(bool);
                 break;
             case GGUF_METADATA_VALUE_TYPE_UINT64:
-                value.value = *(uint64_t*)cursor;
+                metaVal.value.scalar.uint64Val = *(uint64_t*)cursor;
                 cursor += sizeof(uint64_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_INT64:
-                value.value = *(int64_t*)cursor;
+                metaVal.value.scalar.int64Val = *(int64_t*)cursor;
                 cursor += sizeof(int64_t);
                 break;
             case GGUF_METADATA_VALUE_TYPE_FLOAT64:
-                value.value = *(double*)cursor;
+                metaVal.value.scalar.float64Val = *(double*)cursor;
                 cursor += sizeof(double);
                 break; 
             case GGUF_METADATA_VALUE_TYPE_STRING: {
                 uint64_t strLength = *(uint64_t*)cursor;
                 cursor += sizeof(uint64_t);
-                value.value = std::string_view(cursor, strLength);
+                metaVal.value.stringVal = std::string_view(cursor, strLength);
                 cursor += strLength;
-
                 break;
             } 
             case GGUF_METADATA_VALUE_TYPE_ARRAY: {
@@ -89,61 +89,6 @@ std::tuple<std::unordered_map<std::string_view, metadata>, const char*, size_t> 
                 cursor += sizeof(uint64_t); 
 
                 switch (arrayValueType) {
-                    case GGUF_METADATA_VALUE_TYPE_UINT8: {
-                        value.value = std::span<uint8_t>((uint8_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(uint8_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_INT8: {
-                        value.value = std::span<int8_t>((int8_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(int8_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_UINT16: {
-                        value.value = std::span<uint16_t>((uint16_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(uint16_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_INT16: {
-                        value.value = std::span<int16_t>((int16_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(int16_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_UINT32: {
-                        value.value = std::span<uint32_t>((uint32_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(uint32_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_INT32: {
-                        value.value = std::span<int32_t>((int32_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(int32_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_FLOAT32: {
-                        value.value = std::span<float>((float*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(float);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_BOOL: {
-                        value.value = std::span<bool>((bool*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(bool);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_UINT64: {
-                        value.value = std::span<uint64_t>((uint64_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(uint64_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_INT64: {
-                        value.value = std::span<int64_t>((int64_t*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(int64_t);
-                        break;
-                    }
-                    case GGUF_METADATA_VALUE_TYPE_FLOAT64: {
-                        value.value = std::span<double>((double*)cursor, arrayLength);
-                        cursor += arrayLength * sizeof(double);
-                        break;
-                    }
                     case GGUF_METADATA_VALUE_TYPE_STRING: {
                         std::string_view* stringArray = new std::string_view[arrayLength];
                         for (uint64_t j = 0; j < arrayLength; j++) {
@@ -151,29 +96,49 @@ std::tuple<std::unordered_map<std::string_view, metadata>, const char*, size_t> 
                             cursor += sizeof(uint64_t);
                             stringArray[j] = std::string_view(cursor, strLength);
                             cursor += strLength;
-
                         }
-                        value.value = std::span<std::string_view>(stringArray, arrayLength);
+                        metaVal.value.arrayData = stringArray;
+                        metaVal.value.arrayLength = arrayLength;
                         break;
                     }
-                    default:
-                        std::cerr << "Unsupported array value type: " << arrayValueType << std::endl;
-                        return {};
+                    default: {
+                        // All non-string array types: point directly into mmap'd file
+                        metaVal.value.arrayData = cursor;
+                        metaVal.value.arrayLength = arrayLength;
+                        // advance cursor by element count * element size
+                        size_t elemSize = 0;
+                        switch (arrayValueType) {
+                            case GGUF_METADATA_VALUE_TYPE_UINT8:  elemSize = 1; break;
+                            case GGUF_METADATA_VALUE_TYPE_INT8:   elemSize = 1; break;
+                            case GGUF_METADATA_VALUE_TYPE_UINT16: elemSize = 2; break;
+                            case GGUF_METADATA_VALUE_TYPE_INT16:  elemSize = 2; break;
+                            case GGUF_METADATA_VALUE_TYPE_UINT32: elemSize = 4; break;
+                            case GGUF_METADATA_VALUE_TYPE_INT32:  elemSize = 4; break;
+                            case GGUF_METADATA_VALUE_TYPE_FLOAT32:elemSize = 4; break;
+                            case GGUF_METADATA_VALUE_TYPE_BOOL:   elemSize = 1; break;
+                            case GGUF_METADATA_VALUE_TYPE_UINT64: elemSize = 8; break;
+                            case GGUF_METADATA_VALUE_TYPE_INT64:  elemSize = 8; break;
+                            case GGUF_METADATA_VALUE_TYPE_FLOAT64:elemSize = 8; break;
+                            default: break;
+                        }
+                        cursor += arrayLength * elemSize;
+                        break;
+                    }
                 }
                 break;
             }
             default:
                 std::cerr << "Unsupported metadata value type: " << valueType << std::endl;
                 return {};
-        } //switch ends here
+        }
 
-        metadata_map[key] = value;
+        metadata_map[key] = metaVal;
     }
 
     size_t alignment = 0;
     //Alignment
     if (metadata_map.count("general.alignment") != 0)
-        alignment = std::get<uint32_t>(metadata_map["general.alignment"].value);
+        alignment = metadata_map["general.alignment"].value.asUint32();
     else
         alignment = 32;
     
