@@ -67,4 +67,8 @@ void printTensor(const Tensor& tensor);
 Tensor transpose(const Tensor& a);
 double sum(const Tensor& a);
 
+// ─── Normalization ────────────────────────────────────────────────────────────
+
+Tensor rmsNorm(const Tensor& x, const Tensor& weight, float epsilon = 1e-6f);
+
 #endif
