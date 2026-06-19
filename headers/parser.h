@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <string_view>
 #include <span>
-#include <variant>
 #include <unordered_map>
 #include <vector>
 #include <tuple>
@@ -70,40 +69,59 @@ enum gguf_metadata_value_type: uint32_t { // Also copied from ggml.h because i c
     GGUF_METADATA_VALUE_TYPE_FLOAT64 = 12,
 };
 
-using gguf_metadata_value_t = std::variant<
+// ─── Tagged-union metadata value (replaces 25-alternative std::variant) ───────
 
-    uint8_t,
-    int8_t,
-    uint16_t,
-    int16_t,
-    uint32_t,
-    int32_t,
-    float,
-    bool,
-    std::string_view,
-    uint64_t,
-    int64_t,
-    double,
+struct GGufMetadataValue {
+    gguf_metadata_value_type valueType = GGUF_METADATA_VALUE_TYPE_UINT8;
 
-    std::span<uint8_t>,
-    std::span<int8_t>,
-    std::span<uint16_t>,
-    std::span<int16_t>,
-    std::span<uint32_t>,
-    std::span<int32_t>,
-    std::span<float>,
-    std::span<bool>,
-    std::span<uint64_t>,
-    std::span<int64_t>,
-    std::span<double>,
+    // Scalar storage (largest is double = 8 bytes)
+    union Scalar {
+        uint8_t  uint8Val;
+        int8_t   int8Val;
+        uint16_t uint16Val;
+        int16_t  int16Val;
+        uint32_t uint32Val;
+        int32_t  int32Val;
+        float    float32Val;
+        bool     boolVal;
+        uint64_t uint64Val;
+        int64_t  int64Val;
+        double   float64Val;
+    } scalar = {};
 
-    std::span<std::string_view>
->;
+    // String
+    std::string_view stringVal;
+
+    // Array data (view into mmap'd file)
+    const void* arrayData = nullptr;
+    size_t arrayLength = 0;
+
+    // ─── typed accessors ─────────────────────────────────────────────────
+
+    uint32_t asUint32() const { return scalar.uint32Val; }
+    std::string_view asStringView() const { return stringVal; }
+
+    std::span<const std::string_view> asStringViewSpan() const {
+        return {static_cast<const std::string_view*>(arrayData), arrayLength};
+    }
+
+    std::span<const uint64_t> asUint64Span() const {
+        return {static_cast<const uint64_t*>(arrayData), arrayLength};
+    }
+
+    std::span<const float> asFloatSpan() const {
+        return {static_cast<const float*>(arrayData), arrayLength};
+    }
+
+    std::span<const int32_t> asInt32Span() const {
+        return {static_cast<const int32_t*>(arrayData), arrayLength};
+    }
+};
 
 
 typedef struct {
     gguf_metadata_value_type value_type;
-    gguf_metadata_value_t value;
+    GGufMetadataValue value;
 } metadata;
 
 typedef struct {
