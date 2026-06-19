@@ -75,11 +75,7 @@ std::vector<uint64_t> tokenize(const std::string& input, const std::unordered_ma
 }
 
 Tensor tokenToTensor(const uint64_t token, const char* embedWeights, uint32_t type, uint32_t embedSize){
-    Tensor tensor;
-    tensor.mut = true;
-
     size_t unitSize;
-
     switch (type) {
         case GGML_TYPE_F32:
             unitSize = sizeof(float);
@@ -92,11 +88,8 @@ Tensor tokenToTensor(const uint64_t token, const char* embedWeights, uint32_t ty
             return {};
     }
 
-    const char* tensorLocation = embedWeights + (token * unitSize);
-
-    tensor = loadTensor(tensorLocation, true, embedSize, type);
-
-    return tensor;
+    const char* tensorLocation = embedWeights + (token * embedSize * unitSize);
+    return loadTensor(tensorLocation, true, embedSize, type);
 }
 
 std::vector<Tensor> tokensToTensors(const std::vector<uint64_t>& tokens, const char* embedWeights, uint32_t type, uint32_t embedSize){

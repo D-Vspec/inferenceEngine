@@ -11,6 +11,35 @@ struct Buffer {
     void* rawData = nullptr;
     size_t numElements = 0;
     bool isOwned = false;
+
+    Buffer() = default;
+
+    // No copy — prevent accidental double-free
+    Buffer(const Buffer&) = delete;
+    Buffer& operator=(const Buffer&) = delete;
+
+    // Move
+    Buffer(Buffer&& other) noexcept
+        : dtype(other.dtype)
+        , rawData(other.rawData)
+        , numElements(other.numElements)
+        , isOwned(other.isOwned)
+    {
+        other.rawData = nullptr;
+        other.isOwned = false;
+    }
+
+    Buffer& operator=(Buffer&& other) noexcept {
+        if (this != &other) {
+            dtype = other.dtype;
+            rawData = other.rawData;
+            numElements = other.numElements;
+            isOwned = other.isOwned;
+            other.rawData = nullptr;
+            other.isOwned = false;
+        }
+        return *this;
+    }
 };
 
 typedef struct {
