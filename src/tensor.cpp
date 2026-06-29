@@ -422,3 +422,29 @@ Tensor rmsNorm(const Tensor& x, const Tensor& weight, float epsilon) {
     out.data = Buffer(GGML_TYPE_F32, outData, n, true);
     return out;
 }
+
+// ─── ReLU activation ──────────────────────────────────────────────────────────
+
+Tensor relu(const Tensor& x) {
+    size_t n = x.data.numElements;
+
+    const float* xData = asFloatPtr(x.data);
+    std::vector<float> xDequant;
+    if (!xData) {
+        xDequant = dequantizeToFloat(x.data);
+        xData = xDequant.data();
+    }
+
+    float* outData = static_cast<float*>(std::malloc(n * sizeof(float)));
+    if (!outData) throw std::bad_alloc();
+
+    for (size_t i = 0; i < n; ++i)
+        outData[i] = xData[i] > 0.0f ? xData[i] : 0.0f;
+
+    Tensor out;
+    out.dims = {static_cast<uint64_t>(n)};
+    out.stride = {1};
+    out.mut = true;
+    out.data = Buffer(GGML_TYPE_F32, outData, n, true);
+    return out;
+}
