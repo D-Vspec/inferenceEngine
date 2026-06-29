@@ -11,15 +11,19 @@ int RunEngine() {
 
     auto weights = loadWeights(ggufMetadata);
 
+    int numHiddenLayers = static_cast<int>(
+        ggufMetadata.metadata_map.at("qwen2.block_count").value.asUint32());
+
     constexpr int maxNewTokens = 64;
 
     // TODO: tokenize input prompt, get initial token IDs
     // TODO: embedding lookup → hidden state
 
     for (int step = 0; step < maxNewTokens; ++step) {
-        // TODO: for each transformer layer:
-        //   rmsNorm → attention → residual
-        //   rmsNorm → ffn (swiglu) → residual
+        for (int layer = 0; layer < numHiddenLayers; ++layer) {
+            // TODO: rmsNorm → attention → residual
+            // TODO: rmsNorm → ffn (swiglu) → residual
+        }
         // TODO: final rmsNorm → lm_head → logits
         // TODO: sample next token
         // TODO: embedding lookup for next token
