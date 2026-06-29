@@ -11,8 +11,19 @@ int RunEngine() {
 
     auto weights = loadWeights(ggufMetadata);
 
-    // TODO: forward pass
-    // TODO: sample next token
+    constexpr int maxNewTokens = 64;
+
+    // TODO: tokenize input prompt, get initial token IDs
+    // TODO: embedding lookup → hidden state
+
+    for (int step = 0; step < maxNewTokens; ++step) {
+        // TODO: for each transformer layer:
+        //   rmsNorm → attention → residual
+        //   rmsNorm → ffn (swiglu) → residual
+        // TODO: final rmsNorm → lm_head → logits
+        // TODO: sample next token
+        // TODO: embedding lookup for next token
+    }
 
     return 0;
 }
