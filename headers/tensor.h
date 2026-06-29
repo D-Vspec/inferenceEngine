@@ -71,5 +71,7 @@ double sum(const Tensor& a);
 
 Tensor rmsNorm(const Tensor& x, const Tensor& weight, float epsilon = 1e-6f);
 Tensor relu(const Tensor& x);
+Tensor silu(const Tensor& x);
+Tensor swiglu(const Tensor& gate, const Tensor& up);
 
 #endif
