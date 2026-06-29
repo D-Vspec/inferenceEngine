@@ -1,38 +1,16 @@
 #include "../headers/gguf.h"
 #include "../headers/parser.h"
-#include "../headers/tokenizer.h"
-#include <sys/mman.h>
-#include <iostream>
 
 int RunEngine() {
     const char* filename = "models/qwen2-0_5b-instruct-fp16.gguf";
-    GGufStarter ggufMetadata = parseGGUF(filename);    
+    GGufStarter ggufMetadata = parseGGUF(filename);
 
-    for (const auto& [key, meta] : ggufMetadata.metadata_map) {
-        std::cout << "Key: " << key << ", Value Type: " << meta.value_type << std::endl;
-    }
+    if (ggufMetadata.tensorData == nullptr)
+        return 1;
 
-    std::cout << "Length of kv metadata map: " << ggufMetadata.metadata_map.size() << std::endl;
-
-    std::cout << "Tensor count: " << ggufMetadata.tensor_metadata.size() << std::endl;
-    
-    //  for (const auto& [name, tensorInfo] : ggufMetadata.tensor_metadata) {
-    //     std::cout << "Tensor Name: " << name << ", Type: " << tensorInfo.type << ", Offset: " << tensorInfo.offset << std::endl;
-        // std::cout << "Dimensions: ";
-        // for (const auto& dim : tensorInfo.dims) {
-        //     std::cout << dim << " ";
-        // }
-        // std::cout << std::endl;
-    // }
-
-    std::unordered_map<std::string_view, uint32_t>tokenLookup = buildVocab(ggufMetadata.metadata_map["tokenizer.ggml.tokens"].value.asStringViewSpan());
-
-    std::vector<uint64_t> tokens = tokenize("My name is Indigo Montoya, you killed my father, prepare to die.", tokenLookup);
-
-    uint32_t embeddingLength = ggufMetadata.metadata_map["qwen2.embedding_length"].value.asUint32();
-    
-    const char* embedWeights = ggufMetadata.tensorData + ggufMetadata.tensor_metadata["token_embd.weight"].offset;
-    std::vector<Tensor> tokenTensors = tokensToTensors(tokens, embedWeights, ggufMetadata.tensor_metadata["token_embd.weight"].type, embeddingLength);
+    // TODO: load all weight tensors
+    // TODO: forward pass
+    // TODO: sample next token
 
     return 0;
 }
