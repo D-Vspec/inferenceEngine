@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <thread>
+#include <algorithm>
 
 // ─── Buffer helpers ───────────────────────────────────────────────────────────
 
@@ -212,18 +214,53 @@ void mulTensors(const Tensor& a, const Tensor& b, Tensor& out) {
     const float* pb = static_cast<const float*>(b.data.rawData);
     float*       po = static_cast<float*>(out.data.rawData);
 
-    for (uint64_t i = 0; i < M; ++i) {
-        for (uint64_t j = 0; j < N; ++j) {
-            float acc = 0.0f;
+    uint64_t strideA0 = a.stride[0], strideA1 = a.stride[1];
+    uint64_t strideB0 = b.stride[0], strideB1 = b.stride[1];
+    uint64_t strideO0 = out.stride[0], strideO1 = out.stride[1];
+
+    // ── thread count ──────────────────────────────────────────────────────
+
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) numThreads = 4;
+    if (numThreads > M) numThreads = static_cast<unsigned int>(M);
+    if (numThreads < 1) numThreads = 1;
+
+    // ── worker: i → k → j  (k/j swapped for cache-friendly streaming) ────
+
+    auto worker = [&](uint64_t iStart, uint64_t iEnd) {
+        for (uint64_t i = iStart; i < iEnd; ++i) {
+            float* poRow = po + i * strideO0;
+
+            // zero this output row
+            for (uint64_t j = 0; j < N; ++j)
+                poRow[j * strideO1] = 0.0f;
+
+            // accumulate: C[i][:] += A[i][k] * B[k][:]
             for (uint64_t k = 0; k < K; ++k) {
-                size_t offA = i * a.stride[0] + k * a.stride[1];
-                size_t offB = k * b.stride[0] + j * b.stride[1];
-                acc += pa[offA] * pb[offB];
+                float aik = pa[i * strideA0 + k * strideA1];
+                const float* pbRow = pb + k * strideB0;
+                for (uint64_t j = 0; j < N; ++j) {
+                    poRow[j * strideO1] += aik * pbRow[j * strideB1];
+                }
             }
-            size_t offOut = i * out.stride[0] + j * out.stride[1];
-            po[offOut] = acc;
         }
+    };
+
+    // ── launch threads ────────────────────────────────────────────────────
+
+    std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+    uint64_t rowsPerThread = (M + numThreads - 1) / numThreads;
+
+    for (unsigned int t = 0; t < numThreads; ++t) {
+        uint64_t start = t * rowsPerThread;
+        uint64_t end   = std::min(start + rowsPerThread, M);
+        if (start >= end) break;
+        threads.emplace_back(worker, start, end);
     }
+
+    for (auto& thr : threads)
+        thr.join();
 }
 
 // ─── Transpose ────────────────────────────────────────────────────────────────
