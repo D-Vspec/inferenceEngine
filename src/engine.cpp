@@ -1,6 +1,7 @@
 #include "../headers/gguf.h"
 #include "../headers/parser.h"
 #include "../headers/weights.h"
+#include "../headers/activations.h"
 
 #include <iostream>
 #include <string>
@@ -37,6 +38,11 @@ int RunEngine() {
 
     for (uint32_t step = 0; step < numForwardPasses; ++step) {
         for (uint32_t layer = 0; layer < numLayers; ++layer) {
+            std::string attnNormKey =
+                "blk." + std::to_string(layer) + ".attn_norm.weight";
+            const Tensor& attnNormWeight = weights.at(attnNormKey);
+
+            rmsNorm(x, attnNormWeight);
         }
     }
 
