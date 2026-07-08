@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 
 int RunEngine() {
     const char* filename = "models/qwen2-0_5b-instruct-fp16.gguf";
@@ -27,6 +28,21 @@ int RunEngine() {
     uint32_t numLayers =
         ggufMetadata.metadata_map[blockKey].value.asUint32();
 
+    std::string embedKey = arch + ".embedding_length";
+    uint32_t embedDim =
+        ggufMetadata.metadata_map[embedKey].value.asUint32();
+
+    const Tensor& embedWeights = weights.at("token_embd.weight");
+    const float* embedData = asFloatPtr(embedWeights.data);
+    float* xData = static_cast<float*>(std::malloc(embedDim * sizeof(float)));
+    std::memcpy(xData, embedData, embedDim * sizeof(float));
+
+    Tensor x;
+    x.dims = {embedDim};
+    x.stride = {1};
+    x.mut = true;
+    x.data = Buffer(GGML_TYPE_F32, xData, embedDim, true);
+
     const uint32_t numForwardPasses = contextLength;
     const uint32_t numAttentionRuns = numForwardPasses * numLayers;
 
@@ -42,7 +58,7 @@ int RunEngine() {
                 "blk." + std::to_string(layer) + ".attn_norm.weight";
             const Tensor& attnNormWeight = weights.at(attnNormKey);
 
-            rmsNorm(x, attnNormWeight);
+            x = rmsNorm(x, attnNormWeight);
         }
     }
 
