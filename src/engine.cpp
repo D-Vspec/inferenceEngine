@@ -1,7 +1,6 @@
 #include "../headers/gguf.h"
 #include "../headers/parser.h"
 #include "../headers/weights.h"
-#include "../headers/tokenizer.h"
 
 #include <iostream>
 #include <string>
@@ -15,38 +14,30 @@ int RunEngine() {
 
     auto weights = loadWeights(ggufMetadata);
 
-    int numHiddenLayers = static_cast<int>(
-        ggufMetadata.metadata_map.at("qwen2.block_count").value.asUint32());
-    uint32_t embedDim = ggufMetadata.metadata_map.at("qwen2.embedding_length").value.asUint32();
+    std::string arch = std::string(
+        ggufMetadata.metadata_map["general.architecture"].value.asStringView()
+    );
 
-    constexpr int maxNewTokens = 64;
+    std::string ctxKey = arch + ".context_length";
+    uint32_t contextLength =
+        ggufMetadata.metadata_map[ctxKey].value.asUint32();
 
-    // ── tokenize input prompt ─────────────────────────────────────────────
+    std::string blockKey = arch + ".block_count";
+    uint32_t numLayers =
+        ggufMetadata.metadata_map[blockKey].value.asUint32();
 
-    auto vocab = buildVocab(
-        ggufMetadata.metadata_map.at("tokenizer.ggml.tokens").value.asStringViewSpan());
+    const uint32_t numForwardPasses = contextLength;
+    const uint32_t numAttentionRuns = numForwardPasses * numLayers;
 
-    std::string prompt = "Hello, world!";
-    std::vector<uint64_t> tokenIds = tokenize(prompt, vocab);
+    std::cout << "Architecture:     " << arch << std::endl;
+    std::cout << "Context length:   " << contextLength << std::endl;
+    std::cout << "Layers:           " << numLayers << std::endl;
+    std::cout << "Forward passes:   " << numForwardPasses << std::endl;
+    std::cout << "Attention runs:   " << numAttentionRuns << std::endl;
 
-    // ── embedding lookup → initial hidden state ───────────────────────────
-
-    Tensor& embedWeight = weights.at("token_embd.weight");
-    const char* embedPtr  = static_cast<const char*>(embedWeight.data.rawData);
-    uint32_t    embedType = ggufMetadata.tensor_metadata.at("token_embd.weight").type;
-
-    std::vector<Tensor> embeddings = tokensToTensors(tokenIds, embedPtr, embedType, embedDim);
-    Tensor hiddenState = std::move(embeddings.back());  // last token for now
-
-    // ── generation loop ───────────────────────────────────────────────────
-
-    for (int step = 0; step < maxNewTokens; ++step) {
-        for (int layer = 0; layer < numHiddenLayers; ++layer) {
-            // TODO: rmsNorm → attention → residual
-            // TODO: rmsNorm → ffn (swiglu) → residual
+    for (uint32_t step = 0; step < numForwardPasses; ++step) {
+        for (uint32_t layer = 0; layer < numLayers; ++layer) {
         }
-        // TODO: final rmsNorm → lm_head → logits
-        // TODO: sample next token → update hiddenState
     }
 
     return 0;
